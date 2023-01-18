@@ -1,0 +1,106 @@
+parameters:
+#    symedit_theme.theme.file_locator.class: 'Symfony\Component\Config\FileLocator'
+#    symedit_theme.theme.delegating_loader.class: 'Symfony\Component\Config\Loader\DelegatingLoader'
+#    symedit_theme.theme.loader_resolver.class: 'Symfony\Component\Config\Loader\LoaderResolver'
+#    symedit_theme.theme.factory.class: 'DevBase\Bundle\ThemeBundle\Theme\ThemeFactory'
+#    symedit_theme.theme.config.class: 'DevBase\Bundle\ThemeBundle\Theme\ThemeConfiguration'
+#    symedit_theme.model.theme.class: 'DevBase\Bundle\ThemeBundle\Model\Theme'
+#    symedit_theme.cache_dir: '%kernel.cache_dir%/symedit_theme'
+#    symedit_theme.twig.loader.filesystem: 'DevBase\Bundle\ThemeBundle\Twig\FilesystemLoader'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+      autowire: true
+      autoconfigure: true
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    DevBase\Bundle\ThemeBundle\:
+      resource: '../src/*'
+      exclude: '../src/{DependencyInjection,Entity,Finder,Command,Migrations,Tests,Kernel.php}'
+
+    # ---------------------------------------------------------
+    # Register all controllers of ThemeBundle as services
+    # ---------------------------------------------------------
+#    DevBase\Bundle\ThemeBundle\Controller\:
+#      resource: '../src/Controller'
+#      public: true
+#      tags: ['controller.service_arguments']
+
+    # ---------------------------------------------------------
+    # Register all commands of ThemeBundle as commands
+    # ---------------------------------------------------------
+    # DevBase\Bundle\ThemeBundle\Command\:
+    #   resource: '../src/Command'
+    #   tags: ['console.command']
+
+    Symfony\Component\DependencyInjection\ContainerInterface: '@service_container'
+    Twig\Loader\FilesystemLoader: '@twig.loader.native_filesystem'
+
+    theme.listener:
+      class: DevBase\Bundle\ThemeBundle\EventListener\ThemeListener
+      arguments: ['@service_container']
+      tags:
+        -  { name: kernel.event_listener, event: kernel.controller, method: onKernelController, priority: -15 }
+
+    theme.locator:
+      class: DevBase\Bundle\ThemeBundle\Locator\ThemeLocator
+      arguments: ['@kernel', '@theme.context.front', '%fallback_theme%', '%kernel.root_dir%/../web/themes']
+
+    theme.subscriber:
+      class: DevBase\Bundle\ThemeBundle\EventListener\ThemeSubscriber
+      tags:
+        - { name: kernel.event_subscriber }
+      calls:
+        - [setContainer, ['@service_container']]
+
+    theme.file_locator:
+      class: DevBase\Bundle\ThemeBundle\Locator\FileLocator
+      arguments: ['@theme.locator', ['%kernel.root_dir%/Resources']]
+
+    theme.templating_locator:
+      class: DevBase\Bundle\ThemeBundle\Locator\TemplateLocator
+      arguments: ['@theme.file_locator', '%kernel.cache_dir%']
+
+    theme.template_paths.cache_warmer:
+      class: DevBase\Bundle\ThemeBundle\CacheWarmer\TemplatePathsCacheWarmer
+      public: false
+      arguments: ['@templating.finder', '@theme.templating_locator']
+
+##########
+
+    theme.context.front:
+      class: DevBase\Bundle\ThemeBundle\Context\Front\ThemeContext
+      public: true
+
+##########
+
+    DevBase\Bundle\ThemeBundle\EventListener\AddThemePathsToLoaderListener:
+      arguments:
+        $loader: '@twig.loader.filesystem'
+
+  # override TwigBundle's Twig\Environment definition with Zikula's own child class
+  # see vendor/symfony/symfony/src/Symfony/Bundle/TwigBundle/Resources/config/twig.xml
+    twig:
+      class: DevBase\Bundle\ThemeBundle\Bridge\Twig\EventEnabledTwigEngine
+      public: true
+      arguments:
+        $loader: '@twig.loader'
+        $options: []
+      calls:
+        - setEventDispatcher: ['@event_dispatcher']
+        - addGlobal: ['app', '@twig.app_variable']
+        #        - addGlobal: ['pagevars', '@zikula_core.common.theme.pagevars']
+        #        - addGlobal: ['themevars', '@zikula_core.common.theme.themevars']
+        #        - addGlobal: ['currentUser', '@Zikula\UsersModule\Api\ApiInterface\CurrentUserApiInterface']
+        - addRuntimeLoader: ['@twig.runtime_loader']
+      configurator: ['@twig.configurator.environment', 'configure']
+    Twig_Environment: '@twig'
+    Twig\Environment: '@twig'
+
+    DevBase\Bundle\ThemeBundle\EventListener\TemplateNameExposeListener:
+      arguments:
+        $env: '%app_mode%'
+      tags:
+        - { name: kernel.event_subscriber }

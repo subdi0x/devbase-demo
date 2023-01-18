@@ -1,0 +1,33 @@
+parameters:
+    symedit_theme.layout.configuration.class: DevBase\Bundle\ThemeBundle\Layout\LayoutConfiguration
+    symedit_theme.layout.manager.class: DevBase\Bundle\ThemeBundle\Model\LayoutManager
+    symedit_theme.layout.loader.twig.class: DevBase\Bundle\ThemeBundle\Layout\Loader\TwigLayoutLoader
+    symedit_theme.layout.delegating_loader.class: Symfony\Component\Config\Loader\DelegatingLoader
+    symedit_theme.layout.loader_resolver.class: Symfony\Component\Config\Loader\LoaderResolver
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+      autowire: false
+      autoconfigure: false
+
+    symedit_theme.layout.configuration:
+        class: '%symedit_theme.layout.configuration.class%'
+
+    symedit_theme.layout.manager:
+        class: '%symedit_theme.layout.manager.class%'
+        arguments: ['@symedit_theme.layout.loader', '@symedit_theme.layout.configuration']
+
+    symedit_theme.layout.loader_resolver:
+        class: '%symedit_theme.layout.loader_resolver.class%'
+        arguments: []
+        calls:
+            - addLoader: [ '@symedit_theme.layout.loader.twig' ]
+
+    symedit_theme.layout.loader:
+        class: '%symedit_theme.layout.delegating_loader.class%'
+        arguments: ['@symedit_theme.layout.loader_resolver']
+
+    symedit_theme.layout.loader.twig:
+        class: '%symedit_theme.layout.loader.twig.class%'
+        arguments: ['@twig']

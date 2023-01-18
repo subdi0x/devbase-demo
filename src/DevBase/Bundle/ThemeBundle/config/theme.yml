@@ -1,0 +1,77 @@
+parameters:
+    symedit_theme.theme.file_locator.class: 'Symfony\Component\Config\FileLocator'
+    symedit_theme.theme.delegating_loader.class: 'Symfony\Component\Config\Loader\DelegatingLoader'
+    symedit_theme.theme.loader_resolver.class: 'Symfony\Component\Config\Loader\LoaderResolver'
+    symedit_theme.theme.factory.class: 'DevBase\Bundle\ThemeBundle\Theme\ThemeFactory'
+    symedit_theme.theme.config.class: 'DevBase\Bundle\ThemeBundle\Theme\ThemeConfiguration'
+    symedit_theme.model.theme.class: 'DevBase\Bundle\ThemeBundle\Model\Theme'
+    symedit_theme.cache_dir: '%kernel.cache_dir%/symedit_theme'
+    symedit_theme.twig.loader.filesystem: 'DevBase\Bundle\ThemeBundle\Twig\FilesystemLoader'
+
+    symedit_theme.debug: '%kernel.debug%'
+
+    #symedit_theme.templates.bundles: ['SymEditBundle']
+services:
+    # default configuration for services in *this* file
+    _defaults:
+      autowire: false
+      autoconfigure: false
+      public: false
+
+    symedit_theme.theme.file_locator:
+        class: '%symedit_theme.theme.file_locator.class%'
+        public: false
+        arguments:
+            - '%symedit_theme.theme_directory%'
+
+    #
+    # Theme Finder
+    #
+
+    symedit_theme.theme.finder:
+        class: DevBase\Bundle\ThemeBundle\Theme\ThemeFinder
+        public: false
+        arguments:
+            - '%symedit_theme.theme_directory%'
+
+    symedit_theme.theme.loader_resolver:
+        class: '%symedit_theme.theme.loader_resolver.class%'
+        arguments: []
+
+    symedit_theme.theme.loader.yaml:
+        class: DevBase\Bundle\ThemeBundle\Theme\Loader\YamlThemeLoader
+        arguments: ['@symedit_theme.theme.file_locator']
+        tags: [ { name: 'symedit_theme.theme_loader' } ]
+
+    symedit_theme.theme.loader:
+        class: '%symedit_theme.theme.delegating_loader.class%'
+        arguments: ['@symedit_theme.theme.loader_resolver']
+
+    symedit_theme.theme.factory:
+        class: '%symedit_theme.theme.factory.class%'
+        autowire: true
+        arguments:
+            - '@symedit_theme.theme.loader'
+            - '@symedit_theme.theme.config'
+            - { theme_directory: '%symedit_theme.theme_directory%', public_directory: '%symedit_theme.public_directory%', model: '%symedit_theme.model.theme.class%' }
+
+    symedit_theme.cache:
+        alias: 'theme_cache'
+
+    symedit_theme.theme_manager:
+        class: DevBase\Bundle\ThemeBundle\Theme\ThemeManager
+        arguments:
+            - '@symedit_theme.theme.factory'
+            - '@symedit_theme.theme.finder'
+            - '@symedit_theme.cache'
+            - '%symedit_theme.debug%'
+
+    symedit_theme.theme.config:
+        class: '%symedit_theme.theme.config.class%'
+        public: false
+
+    symedit_theme.theme:
+        class: '%symedit_theme.model.theme.class%'
+        public: true
+        factory: [ '@symedit_theme.theme_manager', 'getTheme' ]
+        arguments: ['%symedit_theme.active_theme%']

@@ -1,29 +1,60 @@
 security:
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        legacy:
+            algorithm: sha512
+            encode_as_base64: false
+            iterations: 1
+
+        DevBase\Bundle\UserBundle\Entity\User:
+            algorithm: auto
+            migrate_from:
+                - bcrypt
+                - legacy
+
+    role_hierarchy:
+        ROLE_ADMIN:       ROLE_USER
+        ROLE_SUPER_ADMIN: ROLE_USER
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory: { memory: null }
+        # used to reload user from session & other features (e.g. switch_user)
+        users:
+            entity:
+                class: DevBase\Bundle\UserBundle\Entity\User
+
     firewalls:
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            pattern:  ^/(_(profiler|wdt)|bundles|thumb|thumb-asset|media|uploads)/
             security: false
         main:
             lazy: true
-            provider: users_in_memory
+            provider: users
+            user_checker: DevBase\Bundle\UserBundle\Security\UserChecker
+            pattern: ^/
 
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#the-firewall
+            entry_point: DevBase\Bundle\UserBundle\Security\UserFormAuthenticator
+            custom_authenticators:
+                - DevBase\Bundle\UserBundle\Security\UserFormAuthenticator
 
+            logout:
+                delete_cookies: ['PHPSESSID']
             # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
+            switch_user: { role: ROLE_ADMIN }
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login-social/service/eventbrite, roles: ROLE_ADMIN }
+        - { path: ^/_administration, roles: ROLE_ADMIN }
+        - { path: ^/social, roles: ROLE_USER }
+        - { path: ^/espace-perso, roles: ROLE_USER }
+        - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/login-social, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+        - { path: ^/verify-email, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/_private, roles: PUBLIC_ACCESS, ips: [127.0.0.1, ::1, 192.168.0.1/24] }
 
 when@test:
     security:

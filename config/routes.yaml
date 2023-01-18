@@ -1,3 +1,7 @@
 controllers:
-    resource: ../src/Controller/
+    resource: ../src/App/Controller/
     type: attribute
+
+devbase_user_bundle:
+    resource: '@DevBaseUserBundle/config/routing.yml'
+    prefix: /

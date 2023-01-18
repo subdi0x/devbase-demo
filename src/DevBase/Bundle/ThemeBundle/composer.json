@@ -1,0 +1,29 @@
+{
+    "name": "dixie-dev/theme-bundle",
+    "version": "1.0.0",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0.2"
+    },
+    "require-dev": {
+        "symfony/config": "^6.0",
+        "symfony/dependency-injection": "^6.0",
+        "symfony/http-kernel": "^6.0",
+        "symfony/phpunit-bridge": "^6.0"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Dixie\\Bundle\\ThemeBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dixie\\Bundle\\ThemeBundle\\Tests\\": "tests/"
+        }
+    }
+}

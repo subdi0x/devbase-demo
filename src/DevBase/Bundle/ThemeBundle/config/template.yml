@@ -1,0 +1,50 @@
+parameters:
+    symedit_theme.template.loader.loader_chain.class: DevBase\Bundle\ThemeBundle\Template\Loader\TemplateLoaderChain
+    symedit_theme.template.loader.directories.class: DevBase\Bundle\ThemeBundle\Template\Loader\DirectoriesTemplateLoader
+    symedit_theme.template.loader.directory.class: DevBase\Bundle\ThemeBundle\Template\Loader\DirectoryTemplateLoader
+    symedit_theme.template.loader.bundle.class: DevBase\Bundle\ThemeBundle\Template\Loader\BundleTemplateLoader
+    symedit_theme.template.loader.theme.class: DevBase\Bundle\ThemeBundle\Template\Loader\ThemeTemplateLoader
+    symedit_theme.template.manager.class: DevBase\Bundle\ThemeBundle\Model\TemplateManager
+    symedit_theme.form.type.template.class: DevBase\Bundle\ThemeBundle\Form\Type\TemplateType
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+      autowire: false
+      autoconfigure: false
+      public: false
+
+    #
+    # Loader Chain
+    #
+
+    symedit_theme.template.loader:
+        class: '%symedit_theme.template.loader.loader_chain.class%'
+        public: false
+        arguments: []
+
+    DevBase\Bundle\ThemeBundle\Template\Loader\TemplateLoaderInterface: '@symedit_theme.template.loader'
+
+    #
+    # Current Theme Loader
+    #
+
+    symedit_theme.template.loader.current_theme:
+        class: '%symedit_theme.template.loader.theme.class%'
+        arguments: ['@symedit_theme.theme']
+        tags: [ { name: 'symedit_theme.template_loader', priority: 128 } ]
+
+#    symedit_theme.template.loader.current_theme:
+#        class: '%symedit_theme.template.loader.theme.class%'
+#        public: false
+#        arguments: ['@symedit_theme.theme']
+#        tags: [ { name: 'symedit_theme.theme_loader', priority: 128 } ]
+
+    symedit_theme.template.manager:
+        class: '%symedit_theme.template.manager.class%'
+        arguments: ['@symedit_theme.template.loader']
+
+    symedit_theme.form.type.template:
+        class: '%symedit_theme.form.type.template.class%'
+        arguments: ['@symedit_theme.template.manager', '@symedit_theme.layout.manager']
+        tags: [ { name: 'form.type', alias: 'template' } ]
